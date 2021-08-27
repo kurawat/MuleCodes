@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="aa3a4d95-4c7e-4142-8624-ae63246a8e29" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<vm:config name="VM_Config" doc:name="VM Config" doc:id="b1688e5b-dc08-4f48-add9-74a7999f9658">
+		<vm:connection />
+		<vm:queues >
+			<vm:queue queueName="dw1" />
+			<vm:queue queueName="dw2" />
+			<vm:queue queueName="dw3" />
+			<vm:queue queueName="dw4" />
+			<vm:queue queueName="dw5" />
+		</vm:queues>
+	</vm:config>
+	<configuration-properties doc:name="Configuration properties" doc:id="e2e4ca2e-0cfa-4755-9967-252f494125f7" file="config.properties" />
+	<flow name="dataweave-interview-questionsFlow" doc:id="bc381e6a-7e8d-4f07-afa4-02e1ebdf547b" >
+		<http:listener doc:name="Listener" doc:id="8b38e22d-150d-4352-ad2a-ca50452d9d83" config-ref="HTTP_Listener_config" path="/{dwquestion}"/>
+		<set-variable value="#[attributes.uriParams.dwquestion]" doc:name="Set Variable - dwquestion" doc:id="4768becd-ad6f-4efb-b610-8b25b4b82f7a" variableName="dwquestion"/>
+		<choice doc:name="Choice" doc:id="878c5ef4-dc45-4b25-b755-0557e9284be8" >
+			<when expression="#[vars.dwquestion == 'dw1']">
+				<vm:publish-consume doc:name="Publish consume" doc:id="18e2ef94-935a-4bcd-baf3-1273afcbc9fe" config-ref="VM_Config" queueName="${queue.dw1}" timeout="${queue.timeout}"/>
+			</when>
+			<when expression="#[vars.dwquestion == 'dw2']">
+				<vm:publish-consume doc:name="Publish consume" doc:id="32c815ea-e066-46bc-8e94-f781d4531cd6" config-ref="VM_Config" queueName="${queue.dw2}" timeout="${queue.timeout}"/>
+			</when>
+			<otherwise >
+				<set-payload value='#["No choice"]' doc:name="Set Payload" doc:id="6111129d-54c1-421c-abc2-744c8f376ee5" />
+			</otherwise>
+		</choice>
+	</flow>
+</mule>

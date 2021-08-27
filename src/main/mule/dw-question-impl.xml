@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="dw-question-implFlow" doc:id="f54255a8-2d2f-4996-8fcf-88f6aa4e0c0a" >
+		<vm:listener queueName="${queue.dw1}" doc:name="Listener - dw1" doc:id="5c26c667-7745-4e0b-860b-254d6798690b" config-ref="VM_Config" timeout="${queue.timeout}"/>
+		<ee:transform doc:name="Transform Message" doc:id="d5fd8961-2d61-48af-b910-0a3da5f28f16" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	applicationName: p('app.name'),
+	employeeName: p('emp.name'),
+	dummyFlowPayload: lookup('dw-question-impl-DUMMY-Flow','abc')
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="ca0344ef-ebcc-474c-92b8-165a6273e069" message="End"/>
+	</flow>
+	<flow name="dw-question-impl-DUMMY-Flow" doc:id="4e793829-05f6-4d97-aa8f-4f5fc0372703" >
+		<ee:transform doc:name="Transform Message" doc:id="cd026439-cca7-473d-b3b5-a71e387e5d43" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	dummyFlow: "This is a dummy flow payload",
+	calledFrom: payload
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="dw-question-implFlow1" doc:id="ece89b9e-98ec-4c2a-bea6-f9f20c07a976" >
+		<vm:listener doc:name="Listener" doc:id="ffd504f6-85db-4184-a031-a9df877a4888" config-ref="VM_Config" queueName="${queue.dw2}" timeout="${queue.timeout}"/>
+		<set-variable value="#['{&#10;    &quot;employees&quot;: [&#10;        {&#10;            &quot;name&quot;: &quot;Kuldeep&quot;,&#10;            &quot;place&quot;: &quot;faridabad&quot;&#10;        },&#10;        {&#10;            &quot;name&quot;: &quot;Tarun&quot;,&#10;            &quot;place&quot;: &quot;delhi&quot;&#10;        }&#10;    ],&#10;    &quot;company&quot;: {&#10;        &quot;name&quot;: &quot;ABC Corp&quot;,&#10;        &quot;city&quot;: &quot;Faridabad&quot;,&#10;        &quot;country&quot;: &quot;India&quot;&#10;    }&#10;}']" doc:name="Set Variable" doc:id="dfcea563-1480-4580-b664-f2d2bc3dc877" variableName="defaultpayload"/>
+		<ee:transform doc:name="Transform Message" doc:id="1f13f987-6144-477f-bdaa-0f6e02b4f4de" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+(if (sizeOf(payload)==0)
+   read(vars.defaultpayload,"application/json")
+else
+   payload
+)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="37994bc5-12c9-4342-b936-4f3f28f5a529" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    mapExample: payload.employees map ((item, index) -> {
+        Index: index,
+        Name: item.name,
+        Place: item.place
+    }),
+    mapbojectExample: payload.company mapObject ((value, key, index) -> {
+        indexIs: index,
+        keyIs: key,
+        valueIs: value
+    }),
+    pluckExample: payload.company pluck ((value, key, index) -> {
+        indexIs: index,
+        keyIs: key,
+        valueIs: value
+    })
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
